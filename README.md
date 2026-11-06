@@ -2,8 +2,9 @@
 
 Шаблоны окна MOTD (окно при входе) для серверов **Danyas** (Counter-Strike: Source v34).
 
+* `preview/<сервер>.html` — то же окно с примерными данными, посмотреть в браузере (окно игры ~870×470).
 * `motd/<сервер>.html` — шаблон окна сервера (`dm`, `zriot`, `fun`, `knf`, `gg`, `rpg`, `dd2`).
-  Собирается `python build.py` из `servers.json` (названия, команды) — правьте `servers.json`/`build.py`, потом пересоберите.
+  Собирается `python build.py` из `servers.json` (названия, адреса, цвет, команды, подпись) — правьте `servers.json`/`build.py`, потом пересоберите.
 * Сайт: https://fmu1337.github.io/danyas-motd/ (GitHub Pages) — оттуда же можно брать картинки для окна.
 * Серверы забирают свой шаблон плагином `motd_gen` на каждой смене карты и подставляют данные:
   `{MAP}` `{NEXTMAP}` `{TIMELEFT}` `{PLAYERS}` `{MAXPLAYERS}` `{LEADER}` `{DATE}` `{TIME}` `{HOSTNAME}`.
