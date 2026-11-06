@@ -28,14 +28,19 @@ body{background:#121212;background:radial-gradient(circle at 90%% 0,%(g)s,rgba(0
 .c{-ms-flex:1 1 0px;flex:1 1 0;min-width:0;margin:0 6px;background:#1b1b1b;background:rgba(30,30,30,.85);border:1px solid #2c2c2c;border-top:3px solid %(c)s;border-radius:6px;padding:11px 12px}
 .c.m{-ms-flex:1.7 1 0px;flex:1.7 1 0}
 .l{color:#888;font-size:12px;text-transform:uppercase;letter-spacing:1px}
-.v{color:#fff;font-size:17px;font-weight:bold;margin-top:4px;word-wrap:break-word;word-break:break-all}
+.v{color:#fff;font-size:17px;font-weight:bold;margin-top:4px;word-wrap:break-word;overflow-wrap:break-word}
 h2{margin:20px 0 8px;font-size:13px;color:%(c)s;text-transform:uppercase;letter-spacing:2px}
 .cm{display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap;margin:0 -4px}
 .k{width:50%%;box-sizing:border-box;padding:0 4px 8px}
 .k div{background:#1b1b1b;background:rgba(30,30,30,.85);border:1px solid #2c2c2c;border-radius:6px;padding:10px 12px}
 .k b{display:inline-block;min-width:105px;color:%(c)s;font-family:Consolas,'Courier New',monospace;font-size:16px}
 .k span{color:#bbb;font-size:14px}
-.f{margin-top:14px;color:#666;font-size:12px;text-align:center}"""
+.f{margin-top:14px;color:#666;font-size:12px;text-align:center}
+@media (max-width:780px),(max-height:430px){
+.w{padding:8px 12px}.top{padding:9px 14px}.n{font-size:22px;letter-spacing:1px}.s{font-size:11px}.a{font-size:13px}
+.st{margin-top:8px}.c{padding:6px 8px;margin:0 4px}.l{font-size:10px}.v{font-size:14px;margin-top:2px}
+h2{margin:10px 0 5px;font-size:11px}.k{padding:0 4px 5px}.k div{padding:5px 9px}.k b{font-size:13px;min-width:82px}
+.k span{font-size:12px}.f{margin-top:6px;font-size:11px}}"""
 
 
 def esc(s):
@@ -50,12 +55,12 @@ def glow(c, a=0.22):
 def template(cfg, srv):
     c = srv.get('color', '#ff6a00')
     head = ('<!DOCTYPE html><html><head><meta http-equiv="X-UA-Compatible" content="IE=edge">'
-            '<meta charset="utf-8"><title>%s</title><style>%s</style></head><body><div class="w">'
+            '<meta charset="utf-8"><title>%s</title><style>%s</style></head><body scroll="no"><div class="w">'
             % (esc(cfg['title']), CSS % {'c': c, 'g': glow(c)}))
     top = ('<div class="top"><table><tr><td><div class="n">%s</div><div class="s">%s &middot; %s</div></td>'
            '<td class="a">%s</td></tr></table></div>'
            % (esc(srv['name']), esc(cfg['title'].upper()), esc(cfg['subtitle']), esc(srv['addr'])))
-    cards = [('Карта', '{MAP}', ' m'), ('Следующая', '{NEXTMAP}', ' m'), ('До смены', '{TIMELEFT}', ''),
+    cards = [('Карта', '{MAP}', ' m'), ('Следующая', '{NEXTMAP}', ' m'), ('Осталось', '{TIMELEFT}', ''),
              ('Онлайн', '{PLAYERS} / {MAXPLAYERS}', ''), ('Лидер', '{LEADER}', ' m')]
     st = '<div class="st">' + ''.join('<div class="c%s"><div class="l">%s</div><div class="v" title="%s">%s</div></div>'
                                       % (m, l, v, v) for l, v, m in cards) + '</div>'
@@ -64,6 +69,8 @@ def template(cfg, srv):
         cm = '<h2>Команды</h2><div class="cm">' + ''.join(
             '<div class="k"><div><b>%s</b><span>%s</span></div></div>' % (esc(k), esc(d)) for k, d in srv['commands']) + '</div>'
     foot = '<div class="f">%s</div>' % esc(cfg.get('footer', ''))
+    if not cfg.get('show_cards', False):   # map/online/leader: the server browser shows it anyway (owner, 11-06)
+        st = ''
     return head + top + st + cm + foot + '</div></body></html>'
 
 
