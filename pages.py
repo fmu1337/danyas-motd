@@ -54,7 +54,7 @@ CSS = ("html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sa
        "table{width:100%;border-collapse:collapse;margin-top:8px}"
        "td{border:1px solid #aeaeae;padding:2px 6px}.h td{background:#282828;color:#fff;font-weight:bold}"
        ".b1{background:#f3f3f3}td.k{width:105px;font-weight:bold;font-family:'Courier New',monospace}"
-       "table.lay{margin:0;border:0}table.lay>tbody>tr>td{border:0;padding:0;vertical-align:top}td.l{width:38%;font-size:11px;padding:0 8px 8px 12px!important}td.r{padding:0 12px 0 0!important}iframe{width:100%;height:350px;border:1px solid #aeaeae;background:#1b1b1b}.bt{margin-top:12px}.bt a{display:inline-block;margin-right:10px;padding:8px 18px;background:#282828;color:#fff;"
+       "table.lay{margin:0;border:0}table.lay>tbody>tr>td{border:0;padding:0;vertical-align:top}td.l{width:27%;font-size:11px;padding:0 8px 8px 12px!important}td.r{padding:0 12px 0 0!important}iframe{width:100%;height:410px;border:1px solid #aeaeae;background:#1b1b1b}.bt{margin-top:12px}.bt a{display:inline-block;margin-right:10px;padding:8px 18px;background:#282828;color:#fff;"
        "text-decoration:none;font-weight:bold;border-bottom:3px solid #aeaeae}.bt a:hover{background:#444}")
 
 
