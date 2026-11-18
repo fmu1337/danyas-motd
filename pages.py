@@ -7,7 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STATS = 'https://GE8EEEF55887CD6-ORACLESTATS.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclestats/os/v1/top.html?s=%s&n=10'
 BANS = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/r/oraclebans/oraclebans/home'
 e = lambda s: html.escape(str(s), quote=True)
-LANGS = ['ru', 'uk', 'en']
+LANGS = ['en']  # owner 11-18: English only
 LABEL = {'ru': 'RU', 'uk': 'UA', 'en': 'EN'}
 
 T = {
@@ -59,7 +59,7 @@ CSS = ("html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sa
 
 
 def fname(s, lang):
-    return s['id'] + ('' if lang == 'ru' else '.' + lang) + '.html'
+    return s['id'] + '.html'
 
 
 def page(s, lang):
@@ -75,14 +75,14 @@ def page(s, lang):
     for x in t['rule']:
         left.append('<tr class="b1"><td>%s</td></tr>' % e(x))
     left.append('</table>')
-    sw = ''.join('<b>%s</b>' % LABEL[l] if l == lang else '<a href="%s">%s</a>' % (fname(s, l), LABEL[l]) for l in LANGS)
+    sw = ''
     js = ''
-    if lang == 'ru':  # default page: ClientMod (Chromium) picks the language of the player; old client has no JS
+    if False:  # default page: ClientMod (Chromium) picks the language of the player; old client has no JS
         js = ("<script>try{var l=(navigator.language||'').slice(0,2).toLowerCase(),m={uk:'.uk',en:'.en'};"
               "if(m[l])location.replace('%s'+m[l]+'.html')}catch(x){}</script>" % s['id'])
     return ('<!DOCTYPE html><html lang="%s"><head><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta charset="utf-8">'
             '<title>Danyas Server</title><style>%s</style>%s</head><body>'
-            '<div class="lg">%s</div>'
+            '%s'
             '<table class="lay"><tr><td class="l">%s<div class="bt"><a href="%s">%s</a></div></td>'
             '<td class="r"><iframe src="%s" frameborder="0" scrolling="auto"></iframe></td></tr></table></body></html>'
             % (lang, CSS, js, sw, ''.join(left), e(BANS), e(t['bans']), e(STATS % s['stats'])))
