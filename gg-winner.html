@@ -1,0 +1,49 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>GunGame Winner</title><style type="text/css">body{margin:0;padding:0;background:#FFF;color:#000;font-family:Verdana,Arial,Helvetica,sans-serif;font-size:10pt}
+.hb{background:#282828;color:#FFF;border-bottom:3px solid #AEAEAE}
+.hb td{padding:6px 8px;color:#FFF}
+.t{font-size:15pt;font-weight:bold;letter-spacing:1px}
+.st{font-size:8pt;color:#AEAEAE}
+.dt{width:100%;border-collapse:collapse;border:1px solid #AEAEAE;margin-top:6px}
+.dt td{padding:5px 8px;border:1px solid #AEAEAE;font-size:10pt;text-align:left}
+.dh td{background:#282828;color:#FFF;font-weight:bold}
+.bg1{background:#F3F3F3}
+.w{font-size:14pt;font-weight:bold;padding:10px 8px}
+</style></head>
+<body>
+<table class="hb" width="100%" cellspacing="0" cellpadding="0"><tr><td><div class="t">DANYAS SERVERS</div><div class="st">GunGame</div></td></tr></table>
+<div class="w"><span id="wn">Победитель</span> выиграл игру!</div>
+<table class="dt">
+<tr class="dh"><td colspan="2">&nbsp;Итог</td></tr>
+<tr class="bg1"><td style="width:50%">Победил, убив</td><td id="ln">-</td></tr>
+<tr><td>Побед</td><td id="wi">-</td></tr>
+<tr class="bg1"><td>Место в рейтинге</td><td><span id="pl">-</span> <span id="tp"></span></td></tr>
+</table>
+<script type="text/javascript">
+function g(q, k) {
+  var a = q.split("&"), i, p, n, v;
+  for (i = 0; i < a.length; i++) {
+    p = a[i].indexOf("=");
+    if (p < 0) continue;
+    n = a[i].substring(0, p);
+    if (n != k) continue;
+    v = a[i].substring(p + 1).replace(/\+/g, " ");
+    try { return decodeURIComponent(v); } catch (e) { try { return unescape(v); } catch (e2) { return ""; } }
+  }
+  return "";
+}
+function s(id, text, pre) {
+  var el = document.getElementById(id);
+  if (!el || !text) return;
+  while (el.firstChild) el.removeChild(el.firstChild);
+  el.appendChild(document.createTextNode(pre ? pre + text : text));
+}
+var q = location.search.substring(1);
+s("wn", g(q, "winnerName"));
+s("ln", g(q, "loserName"));
+s("wi", g(q, "wins"));
+s("pl", g(q, "place"));
+s("tp", g(q, "totalPlaces"), "из ");
+</script>
+</body></html>
