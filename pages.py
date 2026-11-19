@@ -5,8 +5,8 @@ usage: python pages.py"""
 import html, json, os, time, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATS = 'https://GE8EEEF55887CD6-ORACLESTATS.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclestats/os/v1/top.html?s=%s&n=10'
-TOPJSON = STATS.replace('top.html?s=%s&n=10', 'top.json?s=%s&n=10')
-BANSJSON = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclebans/ob/v1/bans/recent?limit=30'
+TOPJSON = STATS.replace('top.html?s=%s&n=10', 'top.json?s=%s&n=30')
+BANSJSON = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclebans/ob/v1/bans/recent?limit=100'
 BANS = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/r/oraclebans/oraclebans/home'
 e = lambda s: html.escape(str(s), quote=True)
 LANGS = ['en']  # owner 11-18: English only
@@ -52,7 +52,7 @@ D = {
  'ставки': {'uk': 'ставки', 'en': 'bets'},
 }
 
-CSS = (".st{table-layout:fixed;margin-top:0}.st td{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:3px 5px;font-size:11px}.st .h td{text-align:center}.st td.n{text-align:right}.st td.p{text-align:left}.sh{font-size:14px;font-weight:bold;padding:6px 2px}"
+CSS = (".pg{padding:6px 2px;font-size:11px}.pg a,.pg b{margin-right:8px}.st{table-layout:fixed;margin-top:0}.st td{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:3px 5px;font-size:11px}.st .h td{text-align:center}.st td.n{text-align:right}.st td.p{text-align:left}.sh{font-size:14px;font-weight:bold;padding:6px 2px}"
        "html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sans-serif}"
        ".lg{text-align:right;padding:6px 12px 0;font-size:11px}.lg a{color:#282828;margin-left:8px}.lg b{margin-left:8px}"
        "table{width:100%;border-collapse:collapse;margin-top:8px}"
@@ -88,6 +88,26 @@ def fetch_bans():
     return None
 
 
+PER_STATS = 10
+PER_BANS = 15
+
+
+def pfile(base, pg):
+    return base + ('.html' if pg == 1 else '-p%d.html' % pg)
+
+
+def pager(base, pg, total):
+    if total <= 1:
+        return ''
+    out = ['<div class="pg">']
+    out.append('<a href="%s">&laquo; Prev</a>' % pfile(base, pg - 1) if pg > 1 else '')
+    for i in range(1, total + 1):
+        out.append('<b>%d</b>' % i if i == pg else '<a href="%s">%d</a>' % (pfile(base, i), i))
+    out.append('<a href="%s">Next &raquo;</a>' % pfile(base, pg + 1) if pg < total else '')
+    out.append('</div>')
+    return ''.join(out)
+
+
 def fmt_dur(m):
     m = int(m or 0)
     if m == 0:
@@ -99,18 +119,19 @@ def fmt_dur(m):
     return '%d d' % (m // 1440)
 
 
-def bans_page(s, bans):
+def bans_page(s, bans, pg):
+    total = (len(bans) + PER_BANS - 1) // PER_BANS
     rows = []
-    for i, b in enumerate(bans):
+    for i, b in enumerate(bans[(pg - 1) * PER_BANS:pg * PER_BANS]):
         st = {'active': 'Active', 'unbanned': 'Unbanned', 'expired': 'Expired'}.get(b.get('status'), '')
         dt = time.strftime('%Y-%m-%d', time.gmtime(b['created'])) if b.get('created') else ''
         rows.append('<tr class="%s"><td class="p" title="%s">%s</td><td class="p" title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td><td class="p">%s</td></tr>'
                     % ('b1' if i % 2 == 0 else '', e(b.get('name', '')), e(b.get('name', '')), e(b.get('reason', '')), e(b.get('reason', '')),
                        dt, fmt_dur(b.get('duration_min')), st, e(b.get('server', ''))))
-    body = ('<div class="sh">Recent bans (last %d) &middot; <a href="%s.html">&laquo; Back</a></div>'
+    body = ('<div class="sh">Recent bans (%d) &middot; <a href="%s.html">&laquo; Back</a></div>'
             '<table class="st"><colgroup><col width="20%%"><col><col width="86"><col width="84"><col width="76"><col width="92"></colgroup>'
-            '<tr class="h"><td>Player</td><td>Reason</td><td>Date</td><td>Length</td><td>Status</td><td>Server</td></tr>%s</table>'
-            % (len(bans), s['id'], ''.join(rows)))
+            '<tr class="h"><td>Player</td><td>Reason</td><td>Date</td><td>Length</td><td>Status</td><td>Server</td></tr>%s</table>%s'
+            % (len(bans), s['id'], ''.join(rows), pager('bans-' + s['id'], pg, total)))
     return ('<!DOCTYPE html><html lang="en"><head><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta charset="utf-8">'
             '<title>Danyas Server - bans</title><style>%s</style></head><body><div style="padding:0 10px">%s</div></body></html>' % (CSS, body))
 
@@ -120,36 +141,37 @@ def fmt_time(sec):
     return '%dh %dm' % (m // 60, m % 60) if m >= 60 else '%dm' % m
 
 
-def stats_html(d):
+def stats_html(d, sid, pg=1):
+    total = (len(d['players']) + PER_STATS - 1) // PER_STATS
     rows = ['<div class="sh">Top players: %s</div>' % e(d['name']),
             '<table class="st"><colgroup><col width="28"><col><col width="48"><col width="46"><col width="58"><col width="60"><col width="48"><col width="58"></colgroup>'
             '<tr class="h"><td>#</td><td>Player</td><td>Skill</td><td>Kills</td><td>Deaths</td><td>K/D</td><td>HS%</td><td>Time</td></tr>']
-    for i, p in enumerate(d['players'][:10]):
+    for i, p in enumerate(d['players'][(pg - 1) * PER_STATS:pg * PER_STATS]):
         hs = int(round(100.0 * p['hs'] / p['kills'])) if p['kills'] else 0
         rows.append('<tr class="%s"><td class="n">%d</td><td class="p" title="%s">%s</td><td class="n">%d</td><td class="n">%d</td><td class="n">%d</td><td class="n">%.2f</td><td class="n">%d</td><td class="n">%s</td></tr>'
                     % ('b1' if i % 2 == 0 else '', p['pos'], e(p['name']), e(p['name']), p['skill'], p['kills'], p['deaths'], p['kd'], hs, fmt_time(p['time'])))
     rows.append('</table>')
+    rows.append(pager(sid, pg, total))
     if not d['players']:
         rows.append('<div class="sh" style="font-weight:normal">No ranked players yet.</div>')
     return ''.join(rows)
 
 
-def page(s, lang):
+def page(s, lang, d=None, pg=1):
     t = T[lang]
     left = []
     if s.get('special'):
         left.append('<table><tr class="h"><td colspan="2">%s</td></tr>' % e(t['special']))
-        for i, (k, d) in enumerate(s['special']):
-            d = d if lang == 'ru' else D.get(d, {}).get(lang, d)
-            left.append('<tr class="%s"><td class="k">%s</td><td>%s</td></tr>' % ('b1' if i % 2 == 0 else '', e(k), e(d)))
+        for i, (k, dsc) in enumerate(s['special']):
+            dsc = dsc if lang == 'ru' else D.get(dsc, {}).get(lang, dsc)
+            left.append('<tr class="%s"><td class="k">%s</td><td>%s</td></tr>' % ('b1' if i % 2 == 0 else '', e(k), e(dsc)))
         left.append('</table>')
     left.append('<table><tr class="h"><td>%s</td></tr>' % e(t['rules']))
     for x in t['rule']:
         left.append('<tr class="b1"><td>%s</td></tr>' % e(x))
     left.append('</table>')
-    d = fetch_top(s['stats'])
     bans_url = ('bans-%s.html' % s['id']) if BANSDATA else BANS
-    right = stats_html(d) if d else '<iframe src="%s" frameborder="0" scrolling="auto"></iframe>' % e(STATS % s['stats'])
+    right = stats_html(d, s['id'], pg) if d else '<iframe src="%s" frameborder="0" scrolling="auto"></iframe>' % e(STATS % s['stats'])
     sw = ''
     js = ''
     if False:  # default page: ClientMod (Chromium) picks the language of the player; old client has no JS
@@ -163,16 +185,27 @@ def page(s, lang):
             % (lang, CSS, js, sw, ''.join(left), e(bans_url), e(t['bans']), right))
 
 
+def w(name, text):
+    open(os.path.join(HERE, 'page', name), 'w', encoding='utf-8', newline='').write(text)
+
+
 def main():
     global BANSDATA
+    import glob
     BANSDATA = fetch_bans()
     cfg = json.load(open(os.path.join(HERE, 'pages.json'), encoding='utf-8'))
     os.makedirs(os.path.join(HERE, 'page'), exist_ok=True)
+    for f in glob.glob(os.path.join(HERE, 'page', '*-p[0-9]*.html')):
+        os.remove(f)  # generated pagination pages, rebuilt below
     for s in cfg['servers']:
-        for lang in LANGS:
-            t = page(s, lang)
-            open(os.path.join(HERE, 'page', fname(s, lang)), 'w', encoding='utf-8', newline='\n').write(t)
+        d = fetch_top(s['stats'])
+        npg = max(1, (len(d['players']) + PER_STATS - 1) // PER_STATS) if d else 1
+        for pg in range(1, npg + 1):
+            w(pfile(s['id'], pg), page(s, 'en', d, pg))
         if BANSDATA:
-            open(os.path.join(HERE, 'page', 'bans-%s.html' % s['id']), 'w', encoding='utf-8', newline='\n').write(bans_page(s, BANSDATA))
-        print('%-6s %5d B' % (s['id'], len(t.encode())))
+            for pg in range(1, max(1, (len(BANSDATA) + PER_BANS - 1) // PER_BANS) + 1):
+                w(pfile('bans-' + s['id'], pg), bans_page(s, BANSDATA, pg))
+        print('%-6s pages=%d' % (s['id'], npg))
+
+
 main()
