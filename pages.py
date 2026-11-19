@@ -2,13 +2,15 @@
 (motd.txt on the server = a redirect to page/<id>.html). Style C (old HLstatsX InGame look). IE11/edge friendly
 (plain v34 client: no JS -> language switcher links), ClientMod = Chromium (JS picks the language from navigator.language).
 usage: python pages.py"""
-import html, json, os, urllib.request
+import html, json, os, time, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATS = 'https://GE8EEEF55887CD6-ORACLESTATS.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclestats/os/v1/top.html?s=%s&n=10'
 TOPJSON = STATS.replace('top.html?s=%s&n=10', 'top.json?s=%s&n=10')
+BANSJSON = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclebans/ob/v1/bans/recent?limit=30'
 BANS = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/r/oraclebans/oraclebans/home'
 e = lambda s: html.escape(str(s), quote=True)
 LANGS = ['en']  # owner 11-18: English only
+BANSDATA = None
 LABEL = {'ru': 'RU', 'uk': 'UA', 'en': 'EN'}
 
 T = {
@@ -75,6 +77,44 @@ def fetch_top(code):
     return None
 
 
+def fetch_bans():
+    try:
+        with urllib.request.urlopen(BANSJSON, timeout=20) as r:
+            d = json.load(r)
+        if isinstance(d.get('bans'), list):
+            return d['bans']
+    except Exception as ex:
+        print('bans fetch failed', ex)
+    return None
+
+
+def fmt_dur(m):
+    m = int(m or 0)
+    if m == 0:
+        return 'Permanent'
+    if m < 60:
+        return '%d min' % m
+    if m < 1440:
+        return '%d h' % (m // 60)
+    return '%d d' % (m // 1440)
+
+
+def bans_page(s, bans):
+    rows = []
+    for i, b in enumerate(bans):
+        st = {'active': 'Active', 'unbanned': 'Unbanned', 'expired': 'Expired'}.get(b.get('status'), '')
+        dt = time.strftime('%Y-%m-%d', time.gmtime(b['created'])) if b.get('created') else ''
+        rows.append('<tr class="%s"><td class="p" title="%s">%s</td><td class="p" title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td><td class="p">%s</td></tr>'
+                    % ('b1' if i % 2 == 0 else '', e(b.get('name', '')), e(b.get('name', '')), e(b.get('reason', '')), e(b.get('reason', '')),
+                       dt, fmt_dur(b.get('duration_min')), st, e(b.get('server', ''))))
+    body = ('<div class="sh">Recent bans (last %d) &middot; <a href="%s.html">&laquo; Back</a></div>'
+            '<table class="st"><colgroup><col width="22%%"><col><col width="74"><col width="70"><col width="68"><col width="90"></colgroup>'
+            '<tr class="h"><td>Player</td><td>Reason</td><td>Date</td><td>Length</td><td>Status</td><td>Server</td></tr>%s</table>'
+            % (len(bans), s['id'], ''.join(rows)))
+    return ('<!DOCTYPE html><html lang="en"><head><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta charset="utf-8">'
+            '<title>Danyas Server - bans</title><style>%s</style></head><body><div style="padding:0 10px">%s</div></body></html>' % (CSS, body))
+
+
 def fmt_time(sec):
     m = int(sec) // 60
     return '%dh %dm' % (m // 60, m % 60) if m >= 60 else '%dm' % m
@@ -108,6 +148,7 @@ def page(s, lang):
         left.append('<tr class="b1"><td>%s</td></tr>' % e(x))
     left.append('</table>')
     d = fetch_top(s['stats'])
+    bans_url = ('bans-%s.html' % s['id']) if BANSDATA else BANS
     right = stats_html(d) if d else '<iframe src="%s" frameborder="0" scrolling="auto"></iframe>' % e(STATS % s['stats'])
     sw = ''
     js = ''
@@ -119,15 +160,19 @@ def page(s, lang):
             '%s'
             '<table class="lay"><tr><td class="l">%s<div class="bt"><a href="%s">%s</a></div></td>'
             '<td class="r">%s</td></tr></table></body></html>'
-            % (lang, CSS, js, sw, ''.join(left), e(BANS), e(t['bans']), right))
+            % (lang, CSS, js, sw, ''.join(left), e(bans_url), e(t['bans']), right))
 
 
 def main():
+    global BANSDATA
+    BANSDATA = fetch_bans()
     cfg = json.load(open(os.path.join(HERE, 'pages.json'), encoding='utf-8'))
     os.makedirs(os.path.join(HERE, 'page'), exist_ok=True)
     for s in cfg['servers']:
         for lang in LANGS:
             t = page(s, lang)
             open(os.path.join(HERE, 'page', fname(s, lang)), 'w', encoding='utf-8', newline='\n').write(t)
+        if BANSDATA:
+            open(os.path.join(HERE, 'page', 'bans-%s.html' % s['id']), 'w', encoding='utf-8', newline='\n').write(bans_page(s, BANSDATA))
         print('%-6s %5d B' % (s['id'], len(t.encode())))
 main()
