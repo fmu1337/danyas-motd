@@ -82,7 +82,7 @@ def fmt_time(sec):
 
 def stats_html(d):
     rows = ['<div class="sh">Top players: %s</div>' % e(d['name']),
-            '<table class="st"><colgroup><col width="28"><col><col width="46"><col width="50"><col width="50"><col width="42"><col width="42"><col width="56"></colgroup>'
+            '<table class="st"><colgroup><col width="28"><col><col width="48"><col width="46"><col width="58"><col width="60"><col width="48"><col width="58"></colgroup>'
             '<tr class="h"><td>#</td><td>Player</td><td>Skill</td><td>Kills</td><td>Deaths</td><td>K/D</td><td>HS%</td><td>Time</td></tr>']
     for i, p in enumerate(d['players'][:10]):
         hs = int(round(100.0 * p['hs'] / p['kills'])) if p['kills'] else 0
