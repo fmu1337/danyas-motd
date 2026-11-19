@@ -31,10 +31,28 @@ INFO = {
     'pub': ('Public server (16+)', BASE),
     'test': ('Test server (copy of DM)', BASE),
 }
-CMD = {
-    '!shop': 'shop', '!vip': 'VIP menu', 'ktop, !ktop': 'knife players top', 'kme': 'personal stats (no "!")',
-    '!kbot': 'worst players', 'rpg, !rpg': 'character upgrades menu', 'rpgrank': 'my RPG rank', 'rpgtop': 'RPG top',
-    'rpgstats': 'my RPG stats', '!zmarket / !guns': 'weapon shop', '!props': 'Z-Props', '!bet': 'bets',
+# player commands (11-19, collected by the server chats; only ones not marked "not verified" there). Standard SourceMod ones are omitted.
+STATS_CMD = ('!top, !rank, !statsme', 'top players, your rank and your stats')
+COMMANDS = {
+    'dm': [('guns', 'weapon menu (type it in chat, no "!")'), ('!vip, !class', 'VIP class menu'), ('!viptest', 'free VIP trial, once a week'),
+           ('!st', 'who sprayed the spray you look at')],
+    'zriot': [],
+    'fun': [('!shop', 'shop'), ('!rs', 'reset your score'), ('!settings', 'personal settings'), ('!strafe', 'auto-strafe'),
+            ('!topspeed', 'best speeds table'), ('!scout', 'get a scout (deathrun maps, CT)'), ('!comms', 'your mute / gag status')],
+    'knf': [('!ktop', 'top knife players'), ('!kme', 'your knife stats'), ('!kbot', 'worst players'), ('!vip', 'VIP menu'),
+            ('!viptest', 'free VIP trial'), ('!vipkey <key>', 'activate a VIP key'), ('!cw', 'weapon models menu'), ('!comms', 'your mute / gag status')],
+    'gg': [('level', 'your level and weapon'), ('weapons', 'weapons by level'), ('score', 'levels of all players'), ('rules', 'GunGame rules'),
+           ('top', 'top players by wins')],
+    'rpg': [('rpg, !rpg', 'character upgrades menu'), ('rpgrank', 'your RPG rank'), ('rpgtop', 'RPG top 10'), ('rpgstats', 'your RPG stats'),
+            ('frags', 'exchange frags for credits')],
+    'dd2': [('!vip', 'VIP menu'), ('!viptest', 'free VIP trial'), ('!vipkey <key>', 'activate a VIP key'), ('!viplist', 'VIP list'),
+            ('!rankme', 'RankMe stats menu'), ('!topkills', 'tops: kills, deaths, hs, knife... (!topdeaths, !tophs)'), ('!quake', 'kill sounds menu')],
+    'zm': [('!shop', 'shop'), ('!guns', 'weapon menu (in-game money)'), ('!ak, !awp, !m4 ...', 'buy a specific weapon'),
+           ('!bet h|z <sum>', 'bet on humans / zombies'), ('!zprops', 'props menu'), ('!zvolume', 'zombie sounds volume'), ('!hitmarker', 'hit marker settings')],
+    'pub': [('!menu', 'player menu'), ('!rs', 'reset your score'), ('!sp, !afk', 'go spectate'), ('!admins', 'admins online'), ('!vip', 'VIP menu'),
+            ('!viptest', 'free VIP trial'), ('!cw', 'weapon models menu'), ('!quake', 'kill sounds menu'), ('!comms', 'your mute / gag status')],
+    'test': [('!menu', 'player menu'), ('!rs', 'reset your score'), ('!sp, !afk', 'go spectate'), ('!admins', 'admins online'), ('!vip', 'VIP menu'),
+             ('!viptest', 'free VIP trial')],
 }
 
 CSS = ("html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sans-serif}"
@@ -46,7 +64,7 @@ CSS = ("html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sa
        ".nav ul{display:none;position:absolute;left:0;top:34px;margin:0;padding:0;list-style:none;background:#282828;border:1px solid #aeaeae;z-index:9;width:190px}"
        ".nav .dd:hover ul{display:block}.nav li a{float:none;height:26px;line-height:26px;font-weight:normal;padding:0 14px}"
        ".nav li a.on{background:#444;color:#ffb400}"
-       "table.info td{vertical-align:top}td.k{width:90px;font-weight:bold}td.c{width:120px;font-weight:bold;font-family:'Courier New',monospace}"
+       "table.info td{vertical-align:top}td.k{width:90px;font-weight:bold}td.c{width:160px;white-space:nowrap;font-weight:bold;font-family:'Courier New',monospace}"
        "table.lay{border:0;margin-top:10px}table.lay>tbody>tr>td{border:0;padding:0 8px;vertical-align:top;width:50%}"
        "table.st{table-layout:fixed;margin-top:0}.st td{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:3px 5px;font-size:11px}"
        ".st .h td{text-align:center}.st td.n{text-align:right}.st td.p{text-align:left}"
@@ -113,11 +131,10 @@ def server_body(s):
             '<tr><td class="k">Add-ons</td><td>%s</td></tr>' % e(addons),
             '<tr class="b1"><td class="k">Address</td><td>%s</td></tr>' % e(s['addr'])]
     left = '<div class="sh">Server</div><table class="info">%s</table>' % ''.join(rows)
-    if s.get('special'):
-        left += '<div class="sh">Commands</div><table class="info">%s</table>' % ''.join(
-            '<tr class="%s"><td class="c">%s</td><td>%s</td></tr>' % ('b1' if i % 2 == 0 else '', e(k), e(CMD.get(k, d)))
-            for i, (k, d) in enumerate(s['special']))
-    right = '<div class="sh">Rules</div><table>%s</table>' % ''.join('<tr class="b1"><td>%s</td></tr>' % e(x) for x in RULES)
+    left += '<div class="sh">Rules</div><table>%s</table>' % ''.join('<tr class="b1"><td>%s</td></tr>' % e(x) for x in RULES)
+    cmds = ([STATS_CMD] if s['id'] != 'zriot' else [('!top, !rank', 'top players and your rank')]) + COMMANDS.get(s['id'], [])
+    right = '<div class="sh">Commands</div><table class="info">%s</table>' % ''.join(
+        '<tr class="%s"><td class="c">%s</td><td>%s</td></tr>' % ('b1' if i % 2 == 0 else '', e(k), e(d)) for i, (k, d) in enumerate(cmds))
     return '<table class="lay"><tr><td>%s</td><td>%s</td></tr></table>' % (left, right)
 
 
