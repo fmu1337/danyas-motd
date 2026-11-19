@@ -2,9 +2,10 @@
 (motd.txt on the server = a redirect to page/<id>.html). Style C (old HLstatsX InGame look). IE11/edge friendly
 (plain v34 client: no JS -> language switcher links), ClientMod = Chromium (JS picks the language from navigator.language).
 usage: python pages.py"""
-import html, json, os
+import html, json, os, urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATS = 'https://GE8EEEF55887CD6-ORACLESTATS.adb.eu-frankfurt-1.oraclecloudapps.com/ords/oraclestats/os/v1/top.html?s=%s&n=10'
+TOPJSON = STATS.replace('top.html?s=%s&n=10', 'top.json?s=%s&n=10')
 BANS = 'https://ge8eeef55887cd6-oraclebans.adb.eu-frankfurt-1.oraclecloudapps.com/ords/r/oraclebans/oraclebans/home'
 e = lambda s: html.escape(str(s), quote=True)
 LANGS = ['en']  # owner 11-18: English only
@@ -49,7 +50,8 @@ D = {
  'ставки': {'uk': 'ставки', 'en': 'bets'},
 }
 
-CSS = ("html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sans-serif}"
+CSS = (".st{table-layout:fixed;margin-top:0}.st td{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:3px 5px;font-size:11px}.st .h td{text-align:center}.st td.n{text-align:right}.st td.p{text-align:left}.sh{font-size:14px;font-weight:bold;padding:6px 2px}"
+       "html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sans-serif}"
        ".lg{text-align:right;padding:6px 12px 0;font-size:11px}.lg a{color:#282828;margin-left:8px}.lg b{margin-left:8px}"
        "table{width:100%;border-collapse:collapse;margin-top:8px}"
        "td{border:1px solid #aeaeae;padding:2px 6px}.h td{background:#282828;color:#fff;font-weight:bold}"
@@ -60,6 +62,36 @@ CSS = ("html,body{margin:0;background:#fff;color:#000;font:13px Verdana,Arial,sa
 
 def fname(s, lang):
     return s['id'] + '.html'
+
+
+def fetch_top(code):
+    try:
+        with urllib.request.urlopen(TOPJSON % code, timeout=20) as r:
+            d = json.load(r)
+        if 'players' in d and d.get('name'):
+            return d
+    except Exception as ex:
+        print('fetch failed', code, ex)
+    return None
+
+
+def fmt_time(sec):
+    m = int(sec) // 60
+    return '%dh %dm' % (m // 60, m % 60) if m >= 60 else '%dm' % m
+
+
+def stats_html(d):
+    rows = ['<div class="sh">Top players: %s</div>' % e(d['name']),
+            '<table class="st"><colgroup><col width="28"><col><col width="46"><col width="50"><col width="50"><col width="42"><col width="42"><col width="56"></colgroup>'
+            '<tr class="h"><td>#</td><td>Player</td><td>Skill</td><td>Kills</td><td>Deaths</td><td>K/D</td><td>HS%</td><td>Time</td></tr>']
+    for i, p in enumerate(d['players'][:10]):
+        hs = int(round(100.0 * p['hs'] / p['kills'])) if p['kills'] else 0
+        rows.append('<tr class="%s"><td class="n">%d</td><td class="p" title="%s">%s</td><td class="n">%d</td><td class="n">%d</td><td class="n">%d</td><td class="n">%.2f</td><td class="n">%d</td><td class="n">%s</td></tr>'
+                    % ('b1' if i % 2 == 0 else '', p['pos'], e(p['name']), e(p['name']), p['skill'], p['kills'], p['deaths'], p['kd'], hs, fmt_time(p['time'])))
+    rows.append('</table>')
+    if not d['players']:
+        rows.append('<div class="sh" style="font-weight:normal">No ranked players yet.</div>')
+    return ''.join(rows)
 
 
 def page(s, lang):
@@ -75,6 +107,8 @@ def page(s, lang):
     for x in t['rule']:
         left.append('<tr class="b1"><td>%s</td></tr>' % e(x))
     left.append('</table>')
+    d = fetch_top(s['stats'])
+    right = stats_html(d) if d else '<iframe src="%s" frameborder="0" scrolling="auto"></iframe>' % e(STATS % s['stats'])
     sw = ''
     js = ''
     if False:  # default page: ClientMod (Chromium) picks the language of the player; old client has no JS
@@ -84,8 +118,8 @@ def page(s, lang):
             '<title>Danyas Server</title><style>%s</style>%s</head><body>'
             '%s'
             '<table class="lay"><tr><td class="l">%s<div class="bt"><a href="%s">%s</a></div></td>'
-            '<td class="r"><iframe src="%s" frameborder="0" scrolling="auto"></iframe></td></tr></table></body></html>'
-            % (lang, CSS, js, sw, ''.join(left), e(BANS), e(t['bans']), e(STATS % s['stats'])))
+            '<td class="r">%s</td></tr></table></body></html>'
+            % (lang, CSS, js, sw, ''.join(left), e(BANS), e(t['bans']), right))
 
 
 def main():
