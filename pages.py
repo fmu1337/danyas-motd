@@ -108,7 +108,7 @@ def bans_page(s, bans):
                     % ('b1' if i % 2 == 0 else '', e(b.get('name', '')), e(b.get('name', '')), e(b.get('reason', '')), e(b.get('reason', '')),
                        dt, fmt_dur(b.get('duration_min')), st, e(b.get('server', ''))))
     body = ('<div class="sh">Recent bans (last %d) &middot; <a href="%s.html">&laquo; Back</a></div>'
-            '<table class="st"><colgroup><col width="22%%"><col><col width="74"><col width="70"><col width="68"><col width="90"></colgroup>'
+            '<table class="st"><colgroup><col width="20%%"><col><col width="86"><col width="84"><col width="76"><col width="92"></colgroup>'
             '<tr class="h"><td>Player</td><td>Reason</td><td>Date</td><td>Length</td><td>Status</td><td>Server</td></tr>%s</table>'
             % (len(bans), s['id'], ''.join(rows)))
     return ('<!DOCTYPE html><html lang="en"><head><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta charset="utf-8">'
