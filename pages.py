@@ -129,7 +129,7 @@ def bans_page(s, bans, pg):
                     % ('b1' if i % 2 == 0 else '', e(b.get('name', '')), e(b.get('name', '')), e(b.get('reason', '')), e(b.get('reason', '')),
                        dt, fmt_dur(b.get('duration_min')), st, e(b.get('server', ''))))
     return ('<div class="sh">Recent bans (%d)</div>'
-            '<table class="st"><colgroup><col width="22%%"><col><col width="78"><col width="74"><col width="66"><col width="78"></colgroup>'
+            '<table class="st"><colgroup><col width="20%%"><col><col width="76"><col width="70"><col width="76"><col width="76"></colgroup>'
             '<tr class="h"><td>Player</td><td>Reason</td><td>Date</td><td>Length</td><td>Status</td><td>Server</td></tr>%s</table>%s'
             % (len(bans), ''.join(rows), pager('bans-' + s['id'], pg, total)))
 
