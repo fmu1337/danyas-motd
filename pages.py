@@ -128,12 +128,10 @@ def bans_page(s, bans, pg):
         rows.append('<tr class="%s"><td class="p" title="%s">%s</td><td class="p" title="%s">%s</td><td>%s</td><td>%s</td><td>%s</td><td class="p">%s</td></tr>'
                     % ('b1' if i % 2 == 0 else '', e(b.get('name', '')), e(b.get('name', '')), e(b.get('reason', '')), e(b.get('reason', '')),
                        dt, fmt_dur(b.get('duration_min')), st, e(b.get('server', ''))))
-    body = ('<div class="sh">Recent bans (%d) &middot; <a href="%s.html">&laquo; Back</a></div>'
-            '<table class="st"><colgroup><col width="20%%"><col><col width="86"><col width="84"><col width="76"><col width="92"></colgroup>'
+    return ('<div class="sh">Recent bans (%d)</div>'
+            '<table class="st"><colgroup><col width="22%%"><col><col width="78"><col width="74"><col width="66"><col width="78"></colgroup>'
             '<tr class="h"><td>Player</td><td>Reason</td><td>Date</td><td>Length</td><td>Status</td><td>Server</td></tr>%s</table>%s'
-            % (len(bans), s['id'], ''.join(rows), pager('bans-' + s['id'], pg, total)))
-    return ('<!DOCTYPE html><html lang="en"><head><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta charset="utf-8">'
-            '<title>Danyas Server - bans</title><style>%s</style></head><body><div style="padding:0 10px">%s</div></body></html>' % (CSS, body))
+            % (len(bans), ''.join(rows), pager('bans-' + s['id'], pg, total)))
 
 
 def fmt_time(sec):
@@ -157,7 +155,7 @@ def stats_html(d, sid, pg=1):
     return ''.join(rows)
 
 
-def page(s, lang, d=None, pg=1):
+def page(s, lang, d=None, pg=1, bans=None):
     t = T[lang]
     left = []
     if s.get('special'):
@@ -171,7 +169,10 @@ def page(s, lang, d=None, pg=1):
         left.append('<tr class="b1"><td>%s</td></tr>' % e(x))
     left.append('</table>')
     bans_url = ('bans-%s.html' % s['id']) if BANSDATA else BANS
-    right = stats_html(d, s['id'], pg) if d else '<iframe src="%s" frameborder="0" scrolling="auto"></iframe>' % e(STATS % s['stats'])
+    btn = t['bans']
+    if bans is not None:
+        bans_url, btn = s['id'] + '.html', '&laquo; Back'
+    right = bans_page(s, BANSDATA, pg) if bans is not None else stats_html(d, s['id'], pg) if d else '<iframe src="%s" frameborder="0" scrolling="auto"></iframe>' % e(STATS % s['stats'])
     sw = ''
     js = ''
     if False:  # default page: ClientMod (Chromium) picks the language of the player; old client has no JS
@@ -182,7 +183,7 @@ def page(s, lang, d=None, pg=1):
             '%s'
             '<table class="lay"><tr><td class="l">%s<div class="bt"><a href="%s">%s</a></div></td>'
             '<td class="r">%s</td></tr></table></body></html>'
-            % (lang, CSS, js, sw, ''.join(left), e(bans_url), e(t['bans']), right))
+            % (lang, CSS, js, sw, ''.join(left), e(bans_url), btn if bans is not None else e(btn), right))
 
 
 def w(name, text):
@@ -204,7 +205,7 @@ def main():
             w(pfile(s['id'], pg), page(s, 'en', d, pg))
         if BANSDATA:
             for pg in range(1, max(1, (len(BANSDATA) + PER_BANS - 1) // PER_BANS) + 1):
-                w(pfile('bans-' + s['id'], pg), bans_page(s, BANSDATA, pg))
+                w(pfile('bans-' + s['id'], pg), page(s, 'en', d, pg, BANSDATA))
         print('%-6s pages=%d' % (s['id'], npg))
 
 
